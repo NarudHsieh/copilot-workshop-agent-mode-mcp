@@ -60,8 +60,8 @@ function renderTodos() {
 
 function getEmptyMessage() {
   if (todos.length === 0) return "還沒有任何待辦事項,新增一個吧!";
-  if (currentFilter === "active") return "目前沒有未完成的待辦事項。";
-  if (currentFilter === "completed") return "目前沒有已完成的待辦事項。";
+  if (currentFilter === "active") return "目前沒有未完成的待辦事項，其他項目可能已被篩選掉。";
+  if (currentFilter === "completed") return "目前沒有已完成的待辦事項，其他項目可能已被篩選掉。";
   return "還沒有任何待辦事項,新增一個吧!";
 }
 

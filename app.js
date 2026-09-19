@@ -1,0 +1,122 @@
+const STORAGE_KEY = "offline-todo-items";
+
+const form = document.querySelector("#todo-form");
+const input = document.querySelector("#todo-input");
+const list = document.querySelector("#todo-list");
+const emptyState = document.querySelector("#empty-state");
+const remainingCount = document.querySelector("#remaining-count");
+const clearCompletedButton = document.querySelector("#clear-completed");
+
+let todos = loadTodos();
+
+function loadTodos() {
+  try {
+    const savedTodos = localStorage.getItem(STORAGE_KEY);
+    const parsedTodos = savedTodos ? JSON.parse(savedTodos) : [];
+
+    return Array.isArray(parsedTodos) ? parsedTodos : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveTodos() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+}
+
+function renderTodos() {
+  list.replaceChildren();
+
+  todos.forEach((todo) => {
+    const item = document.createElement("li");
+    item.className = "todo-item";
+    item.dataset.id = todo.id;
+
+    if (todo.completed) {
+      item.classList.add("completed");
+    }
+
+    item.innerHTML = `
+      <input class="todo-check" type="checkbox" ${todo.completed ? "checked" : ""} aria-label="完成 ${escapeHtml(todo.text)}">
+      <span class="todo-text"></span>
+      <button class="delete-button" type="button" aria-label="刪除 ${escapeHtml(todo.text)}">&times;</button>
+    `;
+    item.querySelector(".todo-text").textContent = todo.text;
+    list.append(item);
+  });
+
+  const remaining = todos.filter((todo) => !todo.completed).length;
+  remainingCount.textContent = `未完成:${remaining} 項`;
+  emptyState.hidden = todos.length > 0;
+}
+
+function escapeHtml(text) {
+  return text.replace(/[&<>'"]/g, (character) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;"
+    };
+
+    return entities[character];
+  });
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const text = input.value.trim();
+
+  if (!text) {
+    input.focus();
+    return;
+  }
+
+  todos.push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    text,
+    completed: false
+  });
+
+  saveTodos();
+  renderTodos();
+  form.reset();
+  input.focus();
+});
+
+list.addEventListener("change", (event) => {
+  if (!event.target.matches(".todo-check")) {
+    return;
+  }
+
+  const item = event.target.closest(".todo-item");
+  const todo = todos.find((entry) => entry.id === item.dataset.id);
+
+  if (todo) {
+    todo.completed = event.target.checked;
+    saveTodos();
+    renderTodos();
+  }
+});
+
+list.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest(".delete-button");
+
+  if (!deleteButton) {
+    return;
+  }
+
+  const item = deleteButton.closest(".todo-item");
+  todos = todos.filter((todo) => todo.id !== item.dataset.id);
+  saveTodos();
+  renderTodos();
+});
+
+clearCompletedButton.addEventListener("click", () => {
+  todos = todos.filter((todo) => !todo.completed);
+  saveTodos();
+  renderTodos();
+});
+
+renderTodos();
